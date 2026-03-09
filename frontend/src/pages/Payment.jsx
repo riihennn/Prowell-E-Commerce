@@ -8,10 +8,21 @@ import {
   User,
   Phone,
   Home,
-  Package
+  Package,
+  CreditCard
 } from "lucide-react";
 import { UserContext } from "../Context/UserContext";
-import { placeOrder } from "../services/orderService";
+import { placeOrder, createPayment, verifyPayment } from "../services/orderService";
+
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 const Payment = () => {
   const { user, cart, setCart, setUser } = useContext(UserContext);
@@ -32,6 +43,8 @@ const Payment = () => {
   const [state, setState] = useState("");
   const [pincode, setPincode] = useState("");
   const [landmark, setLandmark] = useState("");
+
+  const [paymentMethod, setPaymentMethod] = useState("cod");
 
   React.useEffect(() => {
     if (!user) {
@@ -57,6 +70,11 @@ const Payment = () => {
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
+    
+    if (paymentMethod === "online") {
+      return handleOnlinePayment();
+    }
+    
     setIsProcessing(true);
 
     const orderData = {
@@ -71,7 +89,7 @@ const Payment = () => {
         state,
         pincode
       },
-      paymentMethod: "Cash on Delivery",
+      paymentMethod: paymentMethod === "cod" ? "Cash on Delivery" : "Razorpay",
       subtotal,
       shippingPrice: shipping,
       taxPrice: tax,
@@ -98,6 +116,96 @@ const Payment = () => {
       alert(err.response?.data?.message || "Failed to place order. Please try again.");
     }
   };
+
+  const handleOnlinePayment = async () => {
+  setIsProcessing(true);
+
+  const res = await loadRazorpayScript();
+
+  if (!res) {
+    setIsProcessing(false);
+    alert("Razorpay SDK failed to load");
+    return;
+  }
+
+  try {
+
+    const order = await createPayment(total);
+
+    const options = {
+      key: "rzp_test_SP65X6InHuMzqE", // your key
+      amount: order.amount,
+      currency: "INR",
+      name: "Prowell Store",
+      description: "Order Payment",
+      order_id: order.id,
+
+      handler: async function (response) {
+
+        const data = await verifyPayment(response);
+
+        if (data.success) {
+
+          const orderData = {
+            orderItems: paymentItems,
+            shippingAddress: {
+              fullName,
+              phone,
+              addressLine1,
+              addressLine2,
+              landmark,
+              city,
+              state,
+              pincode
+            },
+            paymentMethod: "Razorpay",
+            subtotal,
+            shippingPrice: shipping,
+            taxPrice: tax,
+            totalPrice: total
+          };
+
+          const newOrder = await placeOrder(orderData);
+
+          setOrderId(newOrder._id);
+          setOrderTotal(total);
+
+          if (!location.state?.product) {
+            setCart([]);
+          }
+
+          setPaymentSuccess(true);
+        } else {
+          setIsProcessing(false);
+          alert("Payment verification failed");
+        }
+      },
+
+      theme: {
+        color: "#ffbe00"
+      }
+    };
+
+    const paymentObject = new window.Razorpay(options);
+    paymentObject.on('payment.failed', function (response) {
+      setIsProcessing(false);
+      alert(response.error.description);
+    });
+    
+    // reset processing when the modal is closed
+    paymentObject.on('modal.closed', function() {
+      setIsProcessing(false);
+    });
+
+    paymentObject.open();
+
+  } catch (err) {
+    setIsProcessing(false);
+    console.error(err);
+    alert("Payment failed");
+  }
+
+};
 
   if (paymentSuccess) {
     return (
@@ -218,51 +326,91 @@ const Payment = () => {
                   ))}
                 </div>
 
-                <div className="mt-8 p-6 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border-2 border-yellow-200">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-[#ffbe00] rounded-full flex items-center justify-center">
-                      <Package className="w-5 h-5 text-white" />
+                <div className="mt-8 space-y-4">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Select Payment Method</h3>
+                  
+                  {/* COD Option */}
+                  <div 
+                    onClick={() => setPaymentMethod("cod")}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${
+                      paymentMethod === "cod" 
+                        ? "border-[#ffbe00] bg-yellow-50/50" 
+                        : "border-gray-200 hover:border-yellow-200"
+                    }`}
+                  >
+                    <div className="flex items-center h-5">
+                      <input
+                        type="radio"
+                        checked={paymentMethod === "cod"}
+                        onChange={() => setPaymentMethod("cod")}
+                        className="w-5 h-5 text-[#ffbe00] border-gray-300 focus:ring-[#ffbe00]"
+                      />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">Cash on Delivery</h3>
-                      <p className="text-sm text-gray-600">Pay when you receive your order</p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-5 h-5 text-gray-600" />
+                        <span className="font-semibold text-gray-900">Cash on Delivery</span>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">Pay when you receive your order</p>
                     </div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 mt-4 flex justify-between">
-                    <span className="text-sm text-gray-600">Amount to be paid:</span>
-                    <span className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
-                      ₹{total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                    </span>
+
+                  {/* Online Payment Option */}
+                  <div 
+                    onClick={() => setPaymentMethod("online")}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${
+                      paymentMethod === "online" 
+                        ? "border-[#ffbe00] bg-yellow-50/50" 
+                        : "border-gray-200 hover:border-yellow-200"
+                    }`}
+                  >
+                    <div className="flex items-center h-5">
+                      <input
+                        type="radio"
+                        checked={paymentMethod === "online"}
+                        onChange={() => setPaymentMethod("online")}
+                        className="w-5 h-5 text-[#ffbe00] border-gray-300 focus:ring-[#ffbe00]"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-5 h-5 text-gray-600" />
+                        <span className="font-semibold text-gray-900">Pay Online</span>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">Pay securely via Razorpay</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
-                  <p className="text-sm text-yellow-700 font-medium">
-                    ⚠️ Online payment is not available now. Only Cash on Delivery is supported.
-                  </p>
+                <div className="mt-6 bg-white rounded-lg p-4 border border-gray-100 shadow-sm flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Amount to be paid:</span>
+                  <span className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
+                    ₹{total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className={`w-full mt-6 flex items-center justify-center gap-3 py-4 rounded-xl font-semibold transition-all shadow-lg ${
-                    isProcessing
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 transform hover:scale-105"
-                  } text-white text-lg shadow-lg font-bold`}
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Placing Order...
-                    </>
-                  ) : (
-                    <>
-                      <Package size={20} />
-                      Place Order - ₹{total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                    </>
-                  )}
-                </button>
+                  <button
+                    type="submit"
+                    disabled={isProcessing}
+                    className={`w-full mt-6 flex items-center justify-center gap-3 py-4 rounded-xl font-semibold transition-all shadow-lg ${
+                      isProcessing
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 transform hover:scale-105"
+                    } text-white text-lg shadow-lg font-bold`}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Placing Order...
+                      </>
+                    ) : (
+                      <>
+                        {paymentMethod === "cod" ? <Package size={20} /> : <CreditCard size={20} />}
+                        Place Order - ₹{total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </>
+                    )}
+                  </button>
+
               </form>
             </div>
           </div>

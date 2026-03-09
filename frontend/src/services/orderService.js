@@ -23,3 +23,15 @@ export const updateOrderStatus = async (orderId, status) => {
     const res = await API.patch(`/orders/${orderId}`, { status });
     return res.data;
 };
+
+// Create Payment
+export const createPayment = async (amount) => {
+    const res = await API.post("/orders/create-payment", { amount });
+    return res.data;
+};
+
+// Verify Payment
+export const verifyPayment = async (paymentData) => {
+    const res = await API.post("/orders/verify-payment", paymentData);
+    return res.data;
+};

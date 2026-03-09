@@ -1,6 +1,8 @@
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
+const razorpay = require("../config/razorpay");
+const crypto = require("crypto");
 
 // 🔹 Create Order (Checkout)
 exports.createOrder = async (req, res) => {
@@ -109,4 +111,45 @@ exports.getAllOrders = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+// create payment order
+exports.createPayment = async (req, res) => {
+
+  const { amount } = req.body;
+
+  const options = {
+    amount: Math.round(amount * 100),
+    currency: "INR",
+    receipt: "receipt_" + Date.now()
+  };
+
+  const order = await razorpay.orders.create(options);
+
+  res.json(order);
+};
+
+
+// verify payment
+exports.verifyPayment = (req, res) => {
+
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+  const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+  const expectedSignature = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(body)
+    .digest("hex");
+
+  if (expectedSignature === razorpay_signature) {
+
+    res.json({ success: true });
+
+  } else {
+
+    res.status(400).json({ success: false });
+
+  }
+
 };

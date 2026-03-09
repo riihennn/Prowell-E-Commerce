@@ -1,0 +1,25 @@
+import API from "../api/api";
+
+// Create a new order
+export const placeOrder = async (orderData) => {
+    const res = await API.post("/orders", orderData);
+    return res.data;
+};
+
+// Get current user's orders
+export const getMyOrders = async () => {
+    const res = await API.get("/orders/myorders");
+    return res.data;
+};
+
+// Get all orders (Admin)
+export const getAllOrders = async () => {
+    const res = await API.get("/orders");
+    return res.data;
+};
+
+// Update order status (Admin)
+export const updateOrderStatus = async (orderId, status) => {
+    const res = await API.patch(`/orders/${orderId}`, { status });
+    return res.data;
+};

@@ -9,7 +9,6 @@ export default function ThirdProducts({ products = [] }) {
   const { user, cart, setCart, wishlist, setWishlist } = useContext(UserContext);
   const navigate = useNavigate();
 
-  // Wishlist toggle
   const toggleWishlist = async (product) => {
     if (!user) return navigate("/auth");
 
@@ -31,7 +30,6 @@ export default function ThirdProducts({ products = [] }) {
     }
   };
 
-  // Add to Cart
   const handleAddToCart = async (product) => {
     if (!user) return navigate("/auth");
 
@@ -50,12 +48,8 @@ export default function ThirdProducts({ products = [] }) {
     }
   };
 
-
   const bestSellers = useMemo(
-    () =>
-      products.filter(
-        (p) =>  p.badge === "Verified" || p.badge === "Best Seller"
-      ),
+    () => products.filter((p) => p.badge === "Verified" || p.badge === "Best Seller"),
     [products]
   );
 
@@ -63,24 +57,27 @@ export default function ThirdProducts({ products = [] }) {
 
   return (
     <div
-      className="w-full bg-cover bg-center bg-no-repeat"
+      className="w-full bg-cover bg-center bg-no-repeat py-6 sm:py-8"
       style={{ backgroundImage: "url('./popular.jpeg')" }}
     >
-      <div className="w-full max-w-[1200px] mx-auto pt-16 pb-10 px-4 sm:px-6 md:px-8">
-        <h2 className="text-2xl sm:text-4xl font-semibold text-white mb-6 flex items-center gap-2">
-          <span className="w-1 h-6 bg-[#ffbe00]" />
+      <div className="w-full max-w-[1200px] mx-auto pt-8 sm:pt-12 pb-8 sm:pb-10 px-3 sm:px-6 lg:px-8">
+
+        {/* Header */}
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-2.5 mb-5 sm:mb-6">
+          <span className="w-1 h-6 sm:h-7 bg-[#ffbe00] rounded-full inline-block" />
           Popular
         </h2>
 
-        <div className="flex gap-2 mb-6">
-          <button className="bg-gray-900 text-white font-semibold px-4 py-2 rounded-lg">
+        {/* Tab */}
+        <div className="flex gap-2 sm:gap-3 mb-5 sm:mb-6">
+          <button className="bg-gray-900 text-white font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm">
             Best Seller
           </button>
         </div>
 
-        {/* Products Section */}
-        <div className="w-full overflow-x-auto hide-scrollbar">
-          <div className="flex gap-6 pb-4 min-w-min">
+        {/* Horizontal Scroll */}
+        <div className="w-full overflow-x-auto hide-scrollbar -mx-3 px-3 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
+          <div className="flex gap-3 sm:gap-4 md:gap-5 pb-3 min-w-min">
             {bestSellers.map((product) => {
               const liked = wishlist.some((item) => item._id === product._id);
 
@@ -88,60 +85,58 @@ export default function ThirdProducts({ products = [] }) {
                 <div
                   key={product._id}
                   onClick={() => navigate(`/productpage/${product._id}`)}
-                  className="bg-white rounded-2xl border border-gray-200 shadow-sm flex-shrink-0 w-[260px] sm:w-[300px] flex flex-col 
-                             transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer"
+                  className="bg-white border border-gray-100 shadow-sm flex-shrink-0
+                             w-[200px] sm:w-[250px] md:w-[280px] lg:w-[320px]
+                             flex flex-col cursor-pointer
+                             transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                 >
                   {/* Image */}
-                  <div className="relative p-4 bg-gradient-to-b from-gray-50 to-white h-40 flex items-center justify-center">
+                  <div className="relative bg-gradient-to-b from-gray-50 to-white rounded-t-2xl
+                                  h-32 sm:h-36 md:h-40
+                                  flex items-center justify-center p-3 sm:p-4 overflow-hidden">
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleWishlist(product);
-                      }}
-                      className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-sm hover:scale-110 transition-transform z-10"
+                      onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
+                      className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow-sm hover:scale-110 transition-transform z-10"
                     >
-                      <Heart
-                        className={`w-5 h-5 transition-colors ${
-                          liked ? "fill-red-500 text-red-500" : "text-gray-400"
-                        }`}
-                      />
+                      <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors ${liked ? "fill-red-500 text-red-500" : "text-gray-400"}`} />
                     </button>
+
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-32 sm:h-36 object-contain"
+                      className="w-full h-24 sm:h-28 md:h-32 object-contain"
                     />
                   </div>
 
                   {/* Info */}
-                  <div className="p-3 flex flex-col flex-1">
-                    <h3 className="text-sm font-semibold text-gray-900 line-clamp-1">
+                  <div className="p-2.5 sm:p-3 flex flex-col flex-1">
+                    <h3 className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-1 mb-0.5">
                       {product.name}
                     </h3>
-                    <p className="text-xs text-gray-600 line-clamp-2 min-h-[2.5rem]">
+                    <p className="text-xs text-gray-500 line-clamp-2 min-h-[2rem] mb-2 leading-relaxed">
                       {product.description}
                     </p>
 
                     {/* Price */}
-                    <div className="flex items-baseline gap-2 mb-3">
-                      <span className="text-base font-bold text-gray-900">
+                    <div className="flex items-baseline gap-1 flex-wrap mb-2.5 mt-auto">
+                      <span className="text-sm sm:text-base font-bold text-gray-900">
                         ₹{product.price}
                       </span>
-                      <span className="text-xs line-through text-gray-400">
-                        ₹{product.originalPrice}
-                      </span>
-                      <span className="text-xs font-semibold text-green-600">
-                        {product.discount}
-                      </span>
+                      {product.originalPrice && (
+                        <span className="text-xs text-gray-300 line-through">
+                          ₹{product.originalPrice}
+                        </span>
+                      )}
+                      {product.discount && (
+                        <span className="text-xs font-semibold text-green-600 bg-green-50 px-1 py-0.5 rounded">
+                          {product.discount}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Buttons */}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCart(product);
-                      }}
-                      className="w-full bg-[#ffbe00] text-gray-900 font-medium py-2 rounded-md text-xs hover:bg-yellow-500 active:scale-95 transition-transform duration-300"
+                      onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
+                      className="w-full bg-[#ffbe00] hover:bg-yellow-500 active:scale-95 text-gray-900 font-semibold py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-all duration-150"
                     >
                       Add to Cart
                     </button>
@@ -152,15 +147,17 @@ export default function ThirdProducts({ products = [] }) {
           </div>
         </div>
 
-        <div className="flex justify-center mt-8">
+        {/* See All */}
+        <div className="flex justify-center mt-6 sm:mt-8">
           <button
             onClick={() => navigate("/products")}
-            className="flex items-center gap-2 text-[#4192df] font-semibold hover:text-gray-200 transition-colors"
+            className="flex items-center gap-1.5 text-[#4192df] font-semibold hover:text-gray-200 text-sm sm:text-base transition-colors duration-200"
           >
             See All Products
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
+
       </div>
     </div>
   );

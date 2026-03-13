@@ -8,7 +8,7 @@ import SecondProducts from "../components/SecondProducts";
 import ThirdProducts from "../components/ThirdProducts";
 import OurBrands from "../components/OurBrands";
 import { getProducts } from "../services/productService";
-import Loader from "../components/Loader";
+import ProductSectionSkeleton from "../components/ProductSectionSkeleton";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -26,14 +26,22 @@ export default function Home() {
       });
   }, []);
 
-  if (loading) return <Loader />;
-
   return (
     <>
       <Carousel />
-      <ThirdProducts products={products} />
-      <SecondProducts products={products} />
-      <FirstProducts products={products} />
+      {loading ? (
+        <>
+          <ProductSectionSkeleton />
+          <ProductSectionSkeleton />
+          <ProductSectionSkeleton />
+        </>
+      ) : (
+        <>
+          <ThirdProducts products={products} />
+          <SecondProducts products={products} />
+          <FirstProducts products={products} />
+        </>
+      )}
       <FlipCardGrid />
       
       <OurBrands />

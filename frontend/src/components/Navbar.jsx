@@ -318,7 +318,7 @@ export default function Navbar() {
                 <Heart className="h-8 w-8 text-gray-700" />
                 {wishlist.length > 0 && (
                   <span
-                    className="absolute -top-1 -right-1 text-white text-sm font-bold rounded-full h-6 w-6 flex items-center justify-center"
+                    className="absolute -top-1 -right-1 text-black text-sm font-bold rounded-full h-6 w-6 flex items-center justify-center"
                     style={{ backgroundColor: "#ffbe00" }}
                   >
                     {wishlist.length}
@@ -333,7 +333,7 @@ export default function Navbar() {
                 <ShoppingCart className="h-8 w-8 text-gray-700" />
                 {cart.length > 0 && (
                   <span
-                    className="absolute -top-1 -right-1 text-white text-sm font-bold rounded-full h-6 w-6 flex items-center justify-center"
+                    className="absolute -top-1 -right-1 text-black text-sm font-bold rounded-full h-6 w-6 flex items-center justify-center"
                     style={{ backgroundColor: "#ffbe00" }}
                   >
                     {cart.reduce((sum, item) => sum + (item.quantity || 1), 0)}

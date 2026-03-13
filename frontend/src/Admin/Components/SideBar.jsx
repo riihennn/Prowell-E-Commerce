@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Logo from "../../assets/prowellBlue.png";
+import Logo from "../../assets/ProWell.png";
 import { 
   LayoutDashboard, 
   Package, 
@@ -75,11 +75,11 @@ const SideBar = ({ activeItem, onNavigation }) => {
               onClick={() => handleItemClick(item.name, item.view)}
               className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${
                 isActive 
-                  ? 'bg-[#2eb4ac] text-white shadow-md' 
+                  ? 'bg-[#ffbe00] text-white shadow-md' 
                   : 'hover:bg-gray-100 text-gray-700'
               } ${isCollapsed ? 'justify-center' : ''}`}
             >
-              <IconComponent size={20} className={isActive ? 'text-white' : 'text-[#2eb4ac]'} />
+              <IconComponent size={20} className={isActive ? 'text-white' : 'text-[#ffbe00]'} />
               {!isCollapsed && (
                 <span className="ml-3 font-medium">{item.name}</span>
               )}
@@ -100,11 +100,11 @@ const SideBar = ({ activeItem, onNavigation }) => {
               onClick={()=>Navigate("/")}
               className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${
                 isActive 
-                  ? 'bg-[#2eb4ac] text-white shadow-md' 
+                  ? 'bg-[#ffbe00] text-white shadow-md' 
                   : 'hover:bg-gray-100 text-gray-700'
               } ${isCollapsed ? 'justify-center' : ''}`}
             >
-              <IconComponent size={20} className={isActive ? 'text-white' : 'text-[#2eb4ac]'} />
+              <IconComponent size={20} className={isActive ? 'text-white' : 'text-[#ffbe00]'} />
               {!isCollapsed && (
                 <span className="ml-3 font-medium">{item.name}</span>
               )}
@@ -117,7 +117,7 @@ const SideBar = ({ activeItem, onNavigation }) => {
       {!isCollapsed && (
         <div className="p-4 border-t border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-[#2eb4ac] rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#ffbe00] rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-sm">A</span>
             </div>
             <div>

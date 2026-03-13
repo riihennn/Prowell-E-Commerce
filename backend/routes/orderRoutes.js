@@ -7,7 +7,8 @@ const {
   getMyOrders,
   getAllOrders,
   createPayment,
-  verifyPayment
+  verifyPayment,
+  cancelOrder
 } = require("../controllers/orderController");
 
 router.get("/", protect, getAllOrders);
@@ -15,5 +16,6 @@ router.post("/", protect, createOrder);
 router.get("/myorders", protect, getMyOrders);
 router.post("/create-payment", createPayment);
 router.post("/verify-payment", verifyPayment);
+router.put("/:id/cancel", protect, cancelOrder);
 
 module.exports = router;

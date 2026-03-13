@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { X, ShoppingCart, ArrowRight, Sparkles } from "lucide-react";
+import { Trash2, ShoppingCart, ArrowRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../Context/UserContext";
 import { removeFromWishlist } from "../services/wishlistService";
@@ -54,14 +54,14 @@ const WishlistItems = ({ items, onRemove, onAddToCart, removingId }) => (
           />
           <button
             onClick={() => onRemove(item._id)}
-            className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-red-100 transition-colors"
+            className="absolute top-3 right-3 w-8 h-8 text-gray-400 bg-white rounded-lg  flex items-center justify-center hover:bg-gray-100 hover:text-gray-500 transition-colors"
           >
-            <X className="w-5 h-5 text-red-500" />
+           <Trash2 size={18} />
           </button>
         </div>
 
         <div className="p-5">
-          <h3 className="text-lg font-bold text-gray-800 mb-1 line-clamp-1 group-hover:text-[#ffbe00] transition-colors">
+          <h3 className="text-lg font-bold text-gray-800 mb-1 line-clamp-1  transition-colors">
             {item.name}
           </h3>
           <p className="text-gray-500 text-sm mb-4 line-clamp-2">
@@ -93,7 +93,7 @@ const WishlistItems = ({ items, onRemove, onAddToCart, removingId }) => (
           {/* ✅ Add to Cart Button (individual) */}
           <button
             onClick={() => onAddToCart(item)}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white px-4 py-2.5 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-md"
+            className="w-full flex items-center justify-center gap-2 bg-[#ffbe00] hover:bg-yellow-500 text-black px-4 py-2.5 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-md"
           >
             <ShoppingCart size={18} />
             Add to Cart
@@ -171,19 +171,10 @@ const Wishlist = () => {
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-amber-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-10 flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
-            <ShoppingCart className="w-6 h-6 text-white fill-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
-              My Wishlist
-            </h1>
-            <p className="text-gray-600 text-sm mt-1">
-              {wishlist.length} {wishlist.length === 1 ? "item" : "items"} saved
-            </p>
-          </div>
-        </div>
+    <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 flex items-center gap-2 mb-6">
+      <span className="w-1 h-6 sm:h-8 bg-[#ffbe00]" />
+       Wishlist
+    </h2>
 
         {wishlist.length === 0 ? (
           <EmptyWishlist navigate={navigate} />

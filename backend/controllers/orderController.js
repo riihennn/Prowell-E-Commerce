@@ -153,3 +153,31 @@ exports.verifyPayment = (req, res) => {
   }
 
 };
+
+// cancel order
+exports.cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Ensure the order belongs to the user or user is admin
+    if (order.user.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+      return res.status(403).json({ message: "Not authorized to cancel this order" });
+    }
+
+    // Only allow cancellation of 'Processing' orders
+    if (order.status !== "Processing") {
+      return res.status(400).json({ message: "Order cannot be cancelled in its current state" });
+    }
+
+    order.status = "Cancelled";
+    await order.save();
+
+    res.json({ message: "Order cancelled successfully", order });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

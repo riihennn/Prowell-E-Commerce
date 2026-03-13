@@ -14,13 +14,13 @@ export const getMyOrders = async () => {
 
 // Get all orders (Admin)
 export const getAllOrders = async () => {
-    const res = await API.get("/orders");
+    const res = await API.get("/admin/orders");
     return res.data;
 };
 
 // Update order status (Admin)
 export const updateOrderStatus = async (orderId, status) => {
-    const res = await API.patch(`/orders/${orderId}`, { status });
+    const res = await API.put(`/admin/orders/${orderId}`, { status });
     return res.data;
 };
 
@@ -33,5 +33,11 @@ export const createPayment = async (amount) => {
 // Verify Payment
 export const verifyPayment = async (paymentData) => {
     const res = await API.post("/orders/verify-payment", paymentData);
+    return res.data;
+};
+
+// Cancel Order
+export const cancelOrder = async (orderId) => {
+    const res = await API.put(`/orders/${orderId}/cancel`);
     return res.data;
 };

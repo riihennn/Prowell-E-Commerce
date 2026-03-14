@@ -5,8 +5,33 @@ const User = require("../models/User");
 // --- PRODUCTS ---
 exports.getAllProducts = async (req, res) => {
     try {
-        const products = await Product.find({});
-        res.json(products);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const { search, category } = req.query;
+
+        let query = {};
+        if (search) {
+            query.name = { $regex: search, $options: "i" };
+        }
+        if (category && category !== "All Categories") {
+            query.category = category;
+        }
+
+        const totalProduct = await Product.countDocuments(query);
+        const activeCategories = await Product.distinct("category");
+        const products = await Product.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        res.json({
+            products,
+            totalProduct,
+            totalCategories: activeCategories.length,
+            page,
+            pages: Math.ceil(totalProduct / limit)
+        });
     } catch (error) {
         res.status(500).json({ message: "Failed to fetch products" });
     }
@@ -51,7 +76,9 @@ exports.deleteProduct = async (req, res) => {
 // --- ORDERS ---
 exports.getAllOrders = async (req, res) => {
     try {
-        const orders = await Order.find({}).populate("user", "name email");
+        const orders = await Order.find({})
+            .populate("user", "name email")
+            .populate("orderItems.product", "name image price");
         res.json(orders);
     } catch (error) {
         res.status(500).json({ message: "Failed to fetch orders" });

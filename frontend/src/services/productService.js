@@ -16,8 +16,9 @@ export const getProductsPaginated = async (params = {}) => {
 };
 
 // Get all products (Admin only)
-export const getAllAdminProducts = async () => {
-  const res = await API.get("/admin/products");
+export const getAllAdminProducts = async (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const res = await API.get(`/admin/products${query ? `?${query}` : ""}`);
   return res.data;
 };
 

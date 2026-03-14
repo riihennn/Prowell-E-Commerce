@@ -26,12 +26,14 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         // Fetch data simultaneously using API services
-        const [products, allOrders, users, stats] = await Promise.all([
-          getAllAdminProducts(),
+        const [productsRes, allOrders, users, stats] = await Promise.all([
+          getAllAdminProducts({ limit: 1000 }), // Get more for the lookup in dashboard or we can rely on populated orders
           getAllOrders(),
           getAllUsers(),
           getDashboardStats()
         ]);
+
+        const products = productsRes.products || [];
 
         // Calculate stats
         const totalRevenue = stats.totalRevenue || 0;

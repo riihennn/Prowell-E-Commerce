@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search,
   Filter,
@@ -25,24 +25,38 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debounceTimer = useRef(null);
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(null);
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchOrders(debouncedSearch, statusFilter);
+  }, [debouncedSearch, statusFilter]);
 
-  const fetchOrders = async () => {
+  // Debounce search — wait 400ms after user stops typing
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 400);
+    return () => clearTimeout(debounceTimer.current);
+  }, [searchTerm]);
+
+  const fetchOrders = async (search = debouncedSearch, status = statusFilter) => {
     setLoading(true);
     try {
-      // Fetch directly from the dedicated order service
-      const data = await getAllOrders();
+      const params = {};
+      if (search && search.trim()) params.search = search.trim();
+      if (status && status !== 'All') params.status = status;
 
-      const formattedOrders = data.map(order => ({
+      const data = await getAllOrders(params);
+
+      const formattedOrders = (Array.isArray(data) ? data : []).map(order => ({
         ...order,
-        orderId: order._id, // Use DB ID
+        orderId: order._id,
         userName: order.user?.name || 'Unknown User',
         userEmail: order.user?.email || 'No email',
         userId: order.user?._id,
@@ -90,19 +104,8 @@ const Orders = () => {
     }
   };
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
-      order.orderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.shippingAddress?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.items?.some(item => 
-        item.title?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-    const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  // Server-side filtered — use orders directly
+  const filteredOrders = orders;
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -146,8 +149,7 @@ const Orders = () => {
   };
 
   const getUniqueStatuses = () => {
-    const statuses = [...new Set(orders.map(order => order.status))].filter(Boolean);
-    return ['All', ...statuses];
+    return ['All', 'Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
   };
 
   const formatDate = (dateString) => {
@@ -174,14 +176,36 @@ const Orders = () => {
 
   const stats = getOrderStats();
 
-  if (loading) {
-    return (
-      <div className="flex-1 min-h-screen bg-gray-50/50 flex flex-col items-center justify-center">
-        <div className="w-16 h-16 border-4 border-[#ffbe00]/20 border-t-[#ffbe00] rounded-full animate-spin shadow-sm"></div>
-        <p className="mt-6 text-gray-500 font-medium text-lg tracking-wide animate-pulse">Loading orders...</p>
-      </div>
-    );
-  }
+
+
+  // Skeleton for the orders list table
+  const OrderSkeleton = () => (
+    <div className="divide-y divide-gray-50/80">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="p-6 md:p-8">
+          <div className="flex flex-col xl:flex-row gap-6 items-start xl:items-center justify-between">
+            <div className="flex-1 space-y-4 w-full">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="skeleton-shimmer h-6 w-32 rounded-lg" />
+                <div className="skeleton-shimmer h-6 w-24 rounded-full" />
+                <div className="skeleton-shimmer h-5 w-36 rounded-lg ml-auto xl:ml-0" />
+              </div>
+              <div className="flex flex-wrap gap-4">
+                <div className="skeleton-shimmer h-8 w-36 rounded-xl" />
+                <div className="skeleton-shimmer h-8 w-44 rounded-xl" />
+                <div className="skeleton-shimmer h-8 w-24 rounded-xl" />
+              </div>
+              <div className="skeleton-shimmer h-9 w-40 rounded-lg" />
+            </div>
+            <div className="flex items-center gap-4 w-full xl:w-auto xl:border-l xl:border-gray-100 xl:pl-8">
+              <div className="skeleton-shimmer h-12 flex-1 xl:w-48 xl:flex-none rounded-2xl" />
+              <div className="skeleton-shimmer h-12 w-12 rounded-2xl" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   if (error) {
     return (
@@ -309,7 +333,9 @@ const Orders = () => {
 
         {/* Orders List */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          {filteredOrders.length > 0 ? (
+          {loading ? (
+            <OrderSkeleton />
+          ) : filteredOrders.length > 0 ? (
             <div className="divide-y divide-gray-50/80">
               {filteredOrders.map((order) => (
                 <div key={order.orderId} className="p-6 md:p-8 hover:bg-gray-50/50 transition-colors group">

@@ -76,9 +76,34 @@ exports.deleteProduct = async (req, res) => {
 // --- ORDERS ---
 exports.getAllOrders = async (req, res) => {
     try {
-        const orders = await Order.find({})
+        const { search, status } = req.query;
+
+        // Build base query
+        let matchStage = {};
+
+        // Status filter
+        if (status && status !== 'All') {
+            matchStage.status = status;
+        }
+
+        // Fetch with population first so we can search populated fields
+        let orders = await Order.find(matchStage)
             .populate("user", "name email")
-            .populate("orderItems.product", "name image price");
+            .populate("orderItems.product", "name image price")
+            .sort({ createdAt: -1 });
+
+        // Apply search filter in-memory (after populate) for name/email/ID
+        if (search && search.trim()) {
+            const term = search.trim().toLowerCase();
+            orders = orders.filter(order =>
+                order._id.toString().toLowerCase().includes(term) ||
+                order.user?.name?.toLowerCase().includes(term) ||
+                order.user?.email?.toLowerCase().includes(term) ||
+                order.shippingAddress?.fullName?.toLowerCase().includes(term) ||
+                order.orderItems?.some(item => item.product?.name?.toLowerCase().includes(term))
+            );
+        }
+
         res.json(orders);
     } catch (error) {
         res.status(500).json({ message: "Failed to fetch orders" });
@@ -109,8 +134,30 @@ exports.updateOrderStatus = async (req, res) => {
 // --- USERS ---
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.find({}).select("-password");
-        res.json(users);
+        const { search, statusFilter } = req.query;
+
+        // Build query — always exclude admins
+        let query = { isAdmin: { $ne: true } };
+
+        // DB-level status filter using the isBlock schema field
+        if (statusFilter === 'blocked') {
+            query.isBlock = true;
+        } else if (statusFilter === 'active') {
+            query.isBlock = { $ne: true }; // false OR field not set yet
+        }
+
+        // DB-level search by name or email
+        if (search && search.trim()) {
+            const term = search.trim();
+            query.$or = [
+                { name: { $regex: term, $options: 'i' } },
+                { email: { $regex: term, $options: 'i' } }
+            ];
+        }
+
+        const users = await User.find(query).select("-password").sort({ createdAt: -1 });
+
+        res.json({ users, total: users.length });
     } catch (error) {
         res.status(500).json({ message: "Failed to fetch users" });
     }
@@ -134,14 +181,8 @@ exports.toggleUserBlock = async (req, res) => {
         const user = await User.findById(req.params.id).select("-password");
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // Assuming we might add an isBlocked field in the future, 
-        // or just toggling admin for now if blocking isn't in schema yet.
-        // Let's add isBlocked logically to support block/unblock.
-        if (user.isBlocked === undefined) {
-            user.set('isBlocked', true, { strict: false });
-        } else {
-            user.set('isBlocked', !user.isBlocked, { strict: false });
-        }
+        // Toggle isBlock using the proper schema field
+        user.isBlock = !user.isBlock;
 
         const updatedUser = await user.save();
         res.json(updatedUser);

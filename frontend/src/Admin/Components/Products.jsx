@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Package, 
   Plus, 
@@ -23,6 +23,8 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debounceTimer = useRef(null);
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [currentView, setCurrentView] = useState('list');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,13 +44,22 @@ const Products = () => {
     fetchCategories();
   }, []);
 
+  // Debounce search input — only update debouncedSearch after 400ms of no typing
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 400);
+    return () => clearTimeout(debounceTimer.current);
+  }, [searchTerm]);
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, categoryFilter]);
+  }, [debouncedSearch, categoryFilter]);
 
   useEffect(() => { 
     fetchProducts(); 
-  }, [currentPage, searchTerm, categoryFilter]);
+  }, [currentPage, debouncedSearch, categoryFilter]);
 
   const fetchCategories = async () => {
     try {
@@ -66,7 +77,7 @@ const Products = () => {
       const params = {
         page: currentPage,
         limit: 10,
-        search: searchTerm,
+        search: debouncedSearch,
         category: categoryFilter === 'All Categories' ? '' : categoryFilter
       };
       
@@ -188,14 +199,33 @@ const Products = () => {
     }
   };
 
-  if (loading && currentView === 'list') {
-    return (
-      <div className="flex-1 min-h-screen bg-gray-50/50 flex flex-col items-center justify-center">
-        <div className="w-16 h-16 border-4 border-[#ffbe00]/20 border-t-[#ffbe00] rounded-full animate-spin shadow-sm"></div>
-        <p className="mt-6 text-gray-500 font-medium text-lg tracking-wide animate-pulse">Loading products...</p>
-      </div>
-    );
-  }
+  // Skeleton row for the product table
+  const ProductSkeleton = () => (
+    <div className="divide-y divide-gray-50/80">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="p-5 md:p-6">
+          <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+            {/* Image skeleton */}
+            <div className="skeleton-shimmer w-full sm:w-28 h-28 rounded-2xl flex-shrink-0" />
+            {/* Info skeleton */}
+            <div className="flex-1 space-y-3">
+              <div className="skeleton-shimmer h-4 w-24 rounded-lg" />
+              <div className="skeleton-shimmer h-6 w-3/4 rounded-lg" />
+              <div className="skeleton-shimmer h-4 w-1/2 rounded-lg" />
+            </div>
+            {/* Price + actions skeleton */}
+            <div className="hidden sm:flex flex-col items-end gap-4 w-48 flex-shrink-0 border-l border-gray-100 pl-6 self-stretch justify-center">
+              <div className="skeleton-shimmer h-8 w-24 rounded-lg ml-auto" />
+              <div className="flex gap-2 w-full justify-end">
+                <div className="skeleton-shimmer h-9 w-20 rounded-xl" />
+                <div className="skeleton-shimmer h-9 w-9 rounded-xl" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   if (error && currentView === 'list') {
     return (
@@ -541,7 +571,9 @@ const Products = () => {
         </div>
 
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          {filteredProducts.length > 0 ? (
+          {loading ? (
+            <ProductSkeleton />
+          ) : filteredProducts.length > 0 ? (
             <>
               <div className="divide-y divide-gray-50/80">
                 {filteredProducts.map((product) => (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
   Mail,
@@ -15,18 +15,31 @@ const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debounceTimer = useRef(null);
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Fetch customers from API service
+  // Fetch on mount AND whenever debouncedSearch or statusFilter changes
   useEffect(() => {
-    fetchCustomers();
-  }, []);
+    fetchCustomers(debouncedSearch, statusFilter);
+  }, [debouncedSearch, statusFilter]);
 
-  const fetchCustomers = async () => {
+  // Debounce the search input — 400ms after typing stops
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 400);
+    return () => clearTimeout(debounceTimer.current);
+  }, [searchTerm]);
+
+  const fetchCustomers = async (search = debouncedSearch, status = statusFilter) => {
     try {
       setLoading(true);
-      const data = await getAllUsers();
-      // Store raw user data
+      const params = {};
+      if (search && search.trim()) params.search = search.trim();
+      if (status && status !== 'all') params.statusFilter = status;
+      const data = await getAllUsers(params);
       setCustomers(data);
     } catch (error) {
       console.error('Error fetching customers:', error);
@@ -35,19 +48,8 @@ const Customers = () => {
     }
   };
 
-  // Filter customers based on search and status, excluding admin
-  const filteredCustomers = customers
-    .filter(customer => !customer.isAdmin) // exclude admin
-    .filter(customer => {
-      const matchesSearch =
-        customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.email?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'blocked' && customer.isBlock) ||
-        (statusFilter === 'active' && !customer.isBlock);
-      return matchesSearch && matchesStatus;
-    });
+  // Server-side filtered — use customers directly
+  const filteredCustomers = customers;
 
   const handleBlockUnblock = async (customerId, currentBlockStatus) => {
     try {
@@ -108,14 +110,7 @@ const Customers = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="flex-1 min-h-screen bg-gray-50/50 flex flex-col items-center justify-center">
-        <div className="w-16 h-16 border-4 border-[#ffbe00]/20 border-t-[#ffbe00] rounded-full animate-spin shadow-sm"></div>
-        <p className="mt-6 text-gray-500 font-medium text-lg tracking-wide animate-pulse">Loading customers...</p>
-      </div>
-    );
-  }
+
 
   return (
     <div className="flex-1 p-6 sm:p-8 lg:p-10 bg-gray-50/50 min-h-screen font-sans">
@@ -213,7 +208,29 @@ const Customers = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredCustomers.map((customer) => {
+              {loading ? (
+                // Skeleton rows
+                [...Array(6)].map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="skeleton-shimmer w-12 h-12 rounded-xl flex-shrink-0" />
+                        <div className="skeleton-shimmer h-5 w-32 rounded-lg" />
+                      </div>
+                    </td>
+                    <td className="px-8 py-5"><div className="skeleton-shimmer h-8 w-48 rounded-lg" /></td>
+                    <td className="px-8 py-5"><div className="skeleton-shimmer h-5 w-20 rounded-lg" /></td>
+                    <td className="px-8 py-5"><div className="skeleton-shimmer h-7 w-20 rounded-full" /></td>
+                    <td className="px-8 py-5">
+                      <div className="flex justify-end gap-3">
+                        <div className="skeleton-shimmer h-9 w-20 rounded-xl" />
+                        <div className="skeleton-shimmer h-9 w-9 rounded-xl" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                filteredCustomers.map((customer) => {
                 const uniqueId = customer._id || customer.id || 'N/A';
                 return (
                   <tr key={uniqueId} className="hover:bg-gray-50/50 hover:shadow-[inset_4px_0_0_#ffbe00] transition-all group">
@@ -271,12 +288,13 @@ const Customers = () => {
                     </td>
                   </tr>
                 );
-              })}
+              })
+              )}
             </tbody>
           </table>
         </div>
 
-        {filteredCustomers.length === 0 && (
+        {!loading && filteredCustomers.length === 0 && (
           <div className="text-center py-20">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
               <User className="w-10 h-10 text-gray-300" />

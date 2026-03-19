@@ -1,8 +1,10 @@
 import API from "../api/api";
 
 // Get all users (Admin only)
-export const getAllUsers = async () => {
-    const res = await API.get("/admin/users");
+export const getAllUsers = async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const res = await API.get(`/admin/users${query ? `?${query}` : ''}`);
+    // Backend now returns { users, total } — extract the array
     return Array.isArray(res.data) ? res.data : (res.data.users || []);
 };
 

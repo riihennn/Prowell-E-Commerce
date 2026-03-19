@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Package, 
   Plus, 
@@ -24,8 +24,6 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const debounceTimer = useRef(null);
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [currentView, setCurrentView] = useState('list');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,22 +43,13 @@ const Products = () => {
     fetchCategories();
   }, []);
 
-  // Debounce search input — only update debouncedSearch after 400ms of no typing
-  useEffect(() => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-    }, 400);
-    return () => clearTimeout(debounceTimer.current);
-  }, [searchTerm]);
-
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, categoryFilter]);
+  }, [searchTerm, categoryFilter]);
 
   useEffect(() => { 
     fetchProducts(); 
-  }, [currentPage, debouncedSearch, categoryFilter]);
+  }, [currentPage, searchTerm, categoryFilter]);
 
   const fetchCategories = async () => {
     try {
@@ -78,7 +67,7 @@ const Products = () => {
       const params = {
         page: currentPage,
         limit: 10,
-        search: debouncedSearch,
+        search: searchTerm,
         category: categoryFilter === 'All Categories' ? '' : categoryFilter
       };
       
@@ -199,6 +188,7 @@ const Products = () => {
       alert(`Failed to delete product: ${error.message}`);
     }
   };
+
 
 
   if (error && currentView === 'list') {

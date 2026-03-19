@@ -16,16 +16,6 @@ export default function Navbar() {
   const searchRef = useRef(null);
   const mobileSearchRef = useRef(null);
 
-  // Lock body scroll when mobile menu is open
-  useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
-  }, [isMenuOpen]);
-
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -53,7 +43,7 @@ export default function Navbar() {
         navigateToProduct(suggestions[activeIndex]);
       } else if (searchTerm.trim() !== "") {
         navigate(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
-        setIsDropdownOpen(false);
+        setIsDropdownOpen(false); // Close dropdown, but keep text
       }
     } else if (e.key === "Escape") {
       setIsDropdownOpen(false);
@@ -64,7 +54,7 @@ export default function Navbar() {
   const handleSearchClick = () => {
     if (searchTerm.trim() !== "") {
       navigate(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
-      setIsDropdownOpen(false);
+      setIsDropdownOpen(false); // Close dropdown, but keep text
     }
   };
 
@@ -172,6 +162,7 @@ export default function Navbar() {
                 transition: "all 0.12s ease",
               }}
             >
+              {/* Product image */}
               <div
                 style={{
                   width: "44px",
@@ -190,6 +181,7 @@ export default function Navbar() {
                 />
               </div>
 
+              {/* Product info */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p
                   style={{
@@ -202,6 +194,7 @@ export default function Navbar() {
                     textOverflow: "ellipsis",
                   }}
                 >
+                  {/* Highlight matching text */}
                   {highlightMatch(product.title || product.name, searchTerm)}
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
@@ -216,11 +209,13 @@ export default function Navbar() {
                 </div>
               </div>
 
+              {/* Arrow hint */}
               <span style={{ fontSize: "16px", color: "#ddd", flexShrink: 0 }}>›</span>
             </li>
           ))}
         </ul>
 
+        {/* Footer: view all */}
         <div
           onClick={() => {
             handleSearchClick();
@@ -258,43 +253,36 @@ export default function Navbar() {
   return (
     <>
       <nav className="bg-white shadow-md sticky top-0 z-50 overflow-visible">
-        {/* ─── Responsive container: tight on phones, padded on tablets+, wide on desktop ─── */}
-        <div className="mx-auto px-3 sm:px-4 md:px-8 lg:px-20 xl:px-24 2xl:px-32 max-w-screen-2xl">
+        <div className="mx-auto px-3 md:mx-20">
           <div className="flex items-center justify-between h-24">
-
-            {/* ── Left: Hamburger (mobile/tablet) + Logo ── */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              {/* Show hamburger on everything below lg */}
+            {/* Mobile menu & Logo */}
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="lg:hidden p-2 sm:p-3 rounded-md hover:bg-gray-100 transition-colors"
-                aria-label="Open menu"
+                className="md:hidden p-3"
               >
-                <Menu className="h-7 w-7 sm:h-8 sm:w-8" />
+                <Menu className="h-8 w-8" />
               </button>
-
               <Link to="/" className="flex-shrink-0">
                 <img
-                  className="h-9 sm:h-10 md:h-11 lg:h-12 w-auto pr-4 sm:pr-6 lg:pr-10"
+                  className="h-10 md:h-15 lg:h-15 w-auto pr-10"
                   src={Logo}
                   alt="Prowell"
                 />
               </Link>
             </div>
 
-            {/* ── Center: Desktop nav links (lg+) ── */}
-            <div className="hidden lg:flex items-center space-x-8 xl:space-x-10 flex-shrink-0">
-              <Link to="/" className="text-lg text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap">Home</Link>
-              <Link to="/products" className="text-lg text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap">Shop</Link>
-              {user?.isAdmin && (
-                <Link to="/admin" className="text-lg text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap">Admin</Link>
-              )}
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-10">
+              <Link to="/" className="text-lg text-gray-700 hover:text-gray-900">Home</Link>
+              <Link to="/products" className="text-lg text-gray-700 hover:text-gray-900">Shop</Link>
+              {user?.isAdmin && <Link to="/admin">Admin</Link>}
             </div>
 
-            {/* ── Desktop Search bar (lg+) ── */}
+            {/* Desktop Search */}
             <div
               ref={searchRef}
-              className="hidden lg:flex flex-1 max-w-sm xl:max-w-md 2xl:max-w-lg mx-6 xl:mx-8 relative overflow-visible"
+              className="hidden md:flex flex-1 max-w-lg mx-8 relative overflow-visible"
             >
               <input
                 type="text"
@@ -321,18 +309,16 @@ export default function Navbar() {
               {isDropdownOpen && suggestions.length > 0 && <SuggestionDropdown />}
             </div>
 
-            {/* ── Right: Icons + User ── */}
-            <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3 lg:space-x-4 xl:space-x-5 flex-shrink-0">
-              {/* Wishlist */}
+            {/* Icons */}
+            <div className="flex items-center space-x-3 md:space-x-5">
               <button
                 onClick={() => navigate("/wishlist")}
-                className="relative p-2 sm:p-3 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label="Wishlist"
+                className="relative p-3 hover:bg-gray-100 rounded-full"
               >
-                <Heart className="h-7 w-7 sm:h-8 sm:w-8 text-gray-700" />
+                <Heart className="h-8 w-8 text-gray-700" />
                 {wishlist.length > 0 && (
                   <span
-                    className="absolute -top-1 -right-1 text-black text-xs sm:text-sm font-bold rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center"
+                    className="absolute -top-1 -right-1 text-black text-sm font-bold rounded-full h-6 w-6 flex items-center justify-center"
                     style={{ backgroundColor: "#ffbe00" }}
                   >
                     {wishlist.length}
@@ -340,16 +326,14 @@ export default function Navbar() {
                 )}
               </button>
 
-              {/* Cart */}
               <button
                 onClick={() => navigate("/cart")}
-                className="relative p-2 sm:p-3 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label="Cart"
+                className="relative p-3 hover:bg-gray-100 rounded-full"
               >
-                <ShoppingCart className="h-7 w-7 sm:h-8 sm:w-8 text-gray-700" />
+                <ShoppingCart className="h-8 w-8 text-gray-700" />
                 {cart.length > 0 && (
                   <span
-                    className="absolute -top-1 -right-1 text-black text-xs sm:text-sm font-bold rounded-full h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center"
+                    className="absolute -top-1 -right-1 text-black text-sm font-bold rounded-full h-6 w-6 flex items-center justify-center"
                     style={{ backgroundColor: "#ffbe00" }}
                   >
                     {cart.reduce((sum, item) => sum + (item.quantity || 1), 0)}
@@ -357,46 +341,44 @@ export default function Navbar() {
                 )}
               </button>
 
-              {/* User avatar — show text label only on xl+ to prevent overflow */}
               <div
                 onClick={() => navigate(user ? "/profile" : "/auth")}
                 className="hidden md:flex items-center gap-2 cursor-pointer"
               >
                 <div
-                  className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-full text-white font-bold text-base lg:text-lg flex-shrink-0"
+                  className="flex items-center justify-center w-12 h-12 rounded-full text-white font-bold text-lg"
                   style={{ backgroundColor: "#ffbe00" }}
                 >
-                  {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-5 w-5 lg:h-6 lg:w-6" />}
+                  {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-6 w-6" />}
                 </div>
-                {/* Hide the greeting on md/lg to save space; show on xl+ */}
-                <span className="hidden xl:block text-gray-700 font-semibold whitespace-nowrap text-sm xl:text-base">
+                <span className="text-gray-700 font-semibold">
                   {user?.name ? `Hello, ${user.name}` : "Login / Sign Up"}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* ── Mobile / Tablet Search bar (below lg) ── */}
-          <div ref={mobileSearchRef} className="lg:hidden pb-3 sm:pb-4 relative overflow-visible">
+          {/* Mobile Search */}
+          <div ref={mobileSearchRef} className="md:hidden pb-4 relative overflow-visible">
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearch}
               onFocus={() => suggestions.length > 0 && setIsDropdownOpen(true)}
-              className="w-full px-5 py-2.5 sm:py-3 pl-11 sm:pl-12 pr-10 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ffbe00]"
+              className="w-full px-5 py-3 pl-12 pr-10 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ffbe00]"
             />
             <Search
               onClick={handleSearchClick}
-              className="absolute left-4 top-3 sm:top-3.5 h-5 w-5 sm:h-6 sm:w-6 text-gray-400 cursor-pointer"
+              className="absolute left-4 top-3.5 h-6 w-6 text-gray-400 cursor-pointer"
             />
             {searchTerm && (
               <button
                 onClick={clearSearch}
-                className="absolute right-4 top-3 sm:top-3.5 text-gray-400 hover:text-gray-600 focus:outline-none"
+                className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600 focus:outline-none"
               >
-                <X className="h-5 w-5 sm:h-6 sm:w-6 p-0.5" />
+                <X className="h-6 w-6 p-0.5" />
               </button>
             )}
             {isDropdownOpen && suggestions.length > 0 && <SuggestionDropdown isMobile />}
@@ -404,35 +386,32 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* ── Mobile / Tablet Drawer Overlay ── */}
+      {/* Mobile Menu Overlay */}
       {isMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
           onClick={() => setIsMenuOpen(false)}
         />
       )}
-
-      {/* ── Slide-in Drawer ── */}
       <div
-        className={`fixed top-0 left-0 h-full bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden
-          w-72 sm:w-80 md:w-96
-          ${isMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
+          isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
-        {/* Drawer header */}
-        <div className="flex items-center justify-between px-4 sm:px-5 py-4 sm:py-5 border-b border-gray-200">
+        <div className="flex items-center justify-between px-5 py-5 border-b border-gray-200">
           <div
             onClick={() => { navigate(user ? "/profile" : "/auth"); setIsMenuOpen(false); }}
             className="flex items-center gap-3 cursor-pointer"
           >
             <div
-              className="flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-full text-white font-bold text-lg shadow-md flex-shrink-0"
+              className="flex items-center justify-center w-12 h-12 rounded-full text-white font-bold text-lg shadow-md"
               style={{ backgroundColor: "#ffbe00" }}
             >
               {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-6 w-6" />}
             </div>
             <div>
-              <p className="font-semibold text-gray-800 text-base sm:text-lg">{user?.name || "Guest"}</p>
-              <p className="text-xs sm:text-sm text-gray-500">{user ? "View Profile" : "Login / Sign Up"}</p>
+              <p className="font-semibold text-gray-800 text-lg">{user?.name || "Guest"}</p>
+              <p className="text-sm text-gray-500">{user ? "View Profile" : "Login / Sign Up"}</p>
             </div>
           </div>
           <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-full hover:bg-gray-100">
@@ -440,30 +419,27 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Drawer nav links */}
-        <div className="flex flex-col mt-5 sm:mt-6 space-y-3 sm:space-y-4 px-5 sm:px-6">
+        <div className="flex flex-col mt-6 space-y-4 px-6">
           {[
             { to: "/", label: "Home" },
             { to: "/products", label: "Shop" },
-            { to: "/cart", label: "Cart" },
-            { to: "/wishlist", label: "Wishlist" },
+            { to: "/Cart", label: "Cart" },
+            { to: "/WishList", label: "Wishlist" },
             { to: "/orders", label: "Your Orders" },
-            ...(user?.isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
           ].map(({ to, label }) => (
             <Link
               key={to}
               to={to}
               onClick={() => setIsMenuOpen(false)}
-              className="text-base sm:text-lg text-gray-700 hover:text-[#ffbe00] transition-colors py-1"
+              className="text-lg text-gray-700 hover:text-[#ffbe00]"
             >
               {label}
             </Link>
           ))}
         </div>
 
-        {/* Drawer footer */}
-        <div className="absolute bottom-0 left-0 w-full border-t border-gray-200 py-4 px-5 sm:px-6">
-          <p className="text-xs sm:text-sm text-gray-500">© {new Date().getFullYear()} Prowell. All rights reserved.</p>
+        <div className="absolute bottom-0 left-0 w-full border-t border-gray-200 py-4 px-6">
+          <p className="text-sm text-gray-500">© {new Date().getFullYear()} Prowell. All rights reserved.</p>
         </div>
       </div>
     </>

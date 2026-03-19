@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search,
   Filter,
@@ -25,38 +25,24 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const debounceTimer = useRef(null);
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(null);
 
   useEffect(() => {
-    fetchOrders(debouncedSearch, statusFilter);
-  }, [debouncedSearch, statusFilter]);
+    fetchOrders();
+  }, []);
 
-  // Debounce search — wait 400ms after user stops typing
-  useEffect(() => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-    }, 400);
-    return () => clearTimeout(debounceTimer.current);
-  }, [searchTerm]);
-
-  const fetchOrders = async (search = debouncedSearch, status = statusFilter) => {
+  const fetchOrders = async () => {
     setLoading(true);
     try {
-      const params = {};
-      if (search && search.trim()) params.search = search.trim();
-      if (status && status !== 'All') params.status = status;
+      // Fetch directly from the dedicated order service
+      const data = await getAllOrders();
 
-      const data = await getAllOrders(params);
-
-      const formattedOrders = (Array.isArray(data) ? data : []).map(order => ({
+      const formattedOrders = data.map(order => ({
         ...order,
-        orderId: order._id,
+        orderId: order._id, // Use DB ID
         userName: order.user?.name || 'Unknown User',
         userEmail: order.user?.email || 'No email',
         userId: order.user?._id,
@@ -104,8 +90,19 @@ const Orders = () => {
     }
   };
 
-  // Server-side filtered — use orders directly
-  const filteredOrders = orders;
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = 
+      order.orderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.shippingAddress?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.items?.some(item => 
+        item.title?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+    const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -149,7 +146,8 @@ const Orders = () => {
   };
 
   const getUniqueStatuses = () => {
-    return ['All', 'Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
+    const statuses = [...new Set(orders.map(order => order.status))].filter(Boolean);
+    return ['All', ...statuses];
   };
 
   const formatDate = (dateString) => {

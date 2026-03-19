@@ -10,8 +10,8 @@ connectDB()
 const app = express()
 
 app.use(cors({
-  origin: "https://prowellfitness.vercel.app",
-  credentials: true
+    origin: "https://prowellfitness.vercel.app",
+    credentials: true
 }));
 app.use(express.json({ limit: "50mb" }))
 app.use(express.urlencoded({ limit: "50mb", extended: true }))

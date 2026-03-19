@@ -16,23 +16,6 @@ import { placeOrder, createPayment, verifyPayment } from "../services/orderServi
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
-    // Already loaded — no need to inject again
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
-
-    // Script tag already injected (loading in progress) — just wait for it
-    const existingScript = document.querySelector(
-      'script[src="https://checkout.razorpay.com/v1/checkout.js"]'
-    );
-    if (existingScript) {
-      existingScript.onload = () => resolve(true);
-      existingScript.onerror = () => resolve(false);
-      return;
-    }
-
-    // First time — inject the script
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.onload = () => resolve(true);

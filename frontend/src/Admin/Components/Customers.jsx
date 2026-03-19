@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Mail,
@@ -16,31 +16,18 @@ const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const debounceTimer = useRef(null);
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Fetch on mount AND whenever debouncedSearch or statusFilter changes
+  // Fetch customers from API service
   useEffect(() => {
-    fetchCustomers(debouncedSearch, statusFilter);
-  }, [debouncedSearch, statusFilter]);
+    fetchCustomers();
+  }, []);
 
-  // Debounce the search input — 400ms after typing stops
-  useEffect(() => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-    }, 400);
-    return () => clearTimeout(debounceTimer.current);
-  }, [searchTerm]);
-
-  const fetchCustomers = async (search = debouncedSearch, status = statusFilter) => {
+  const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const params = {};
-      if (search && search.trim()) params.search = search.trim();
-      if (status && status !== 'all') params.statusFilter = status;
-      const data = await getAllUsers(params);
+      const data = await getAllUsers();
+      // Store raw user data
       setCustomers(data);
     } catch (error) {
       console.error('Error fetching customers:', error);
@@ -49,8 +36,19 @@ const Customers = () => {
     }
   };
 
-  // Server-side filtered — use customers directly
-  const filteredCustomers = customers;
+  // Filter customers based on search and status, excluding admin
+  const filteredCustomers = customers
+    .filter(customer => !customer.isAdmin) // exclude admin
+    .filter(customer => {
+      const matchesSearch =
+        customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'blocked' && customer.isBlock) ||
+        (statusFilter === 'active' && !customer.isBlock);
+      return matchesSearch && matchesStatus;
+    });
 
   const handleBlockUnblock = async (customerId, currentBlockStatus) => {
     try {
@@ -276,7 +274,7 @@ const Customers = () => {
           </table>
         </div>
 
-        {!loading && filteredCustomers.length === 0 && (
+        {filteredCustomers.length === 0 && (
           <div className="text-center py-20">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
               <User className="w-10 h-10 text-gray-300" />

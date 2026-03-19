@@ -13,9 +13,8 @@ export const getMyOrders = async () => {
 };
 
 // Get all orders (Admin)
-export const getAllOrders = async (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    const res = await API.get(`/admin/orders${query ? `?${query}` : ''}`);
+export const getAllOrders = async () => {
+    const res = await API.get("/admin/orders");
     return res.data;
 };
 

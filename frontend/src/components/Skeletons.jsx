@@ -51,7 +51,7 @@ export function AllProductsSkeleton({ count = 12 }) {
         .map((_, i) => (
           <div
             key={i}
-            className="bg-white  border border-stone-100 overflow-hidden flex flex-col"
+            className="bg-white rounded-2xl border border-stone-100 overflow-hidden flex flex-col"
           >
             <div className="bg-gray-200 skeleton-shimmer" style={{ aspectRatio: "1 / 1" }} />
             <div className="p-4 flex flex-col flex-1 gap-2">
@@ -74,7 +74,7 @@ export function AdminProductSkeleton() {
       {[...Array(5)].map((_, i) => (
         <div key={i} className="p-5 md:p-6">
           <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-            <div className="skeleton-shimmer w-full sm:w-28 h-28  flex-shrink-0" />
+            <div className="skeleton-shimmer w-full sm:w-28 h-28 rounded-2xl flex-shrink-0" />
             <div className="flex-1 space-y-3">
               <div className="skeleton-shimmer h-4 w-24 rounded-lg" />
               <div className="skeleton-shimmer h-6 w-3/4 rounded-lg" />
@@ -115,8 +115,8 @@ export function AdminOrderSkeleton() {
               <div className="skeleton-shimmer h-9 w-40 rounded-lg" />
             </div>
             <div className="flex items-center gap-4 w-full xl:w-auto xl:border-l xl:border-gray-100 xl:pl-8">
-              <div className="skeleton-shimmer h-12 flex-1 xl:w-48 xl:flex-none " />
-              <div className="skeleton-shimmer h-12 w-12 " />
+              <div className="skeleton-shimmer h-12 flex-1 xl:w-48 xl:flex-none rounded-2xl" />
+              <div className="skeleton-shimmer h-12 w-12 rounded-2xl" />
             </div>
           </div>
         </div>

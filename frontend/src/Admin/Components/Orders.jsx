@@ -18,7 +18,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { getAllOrders, updateOrderStatus as updateStatusInApi } from '../../services/orderService';
-import Loader from '../../components/Loader';
+import { AdminOrderSkeleton } from '../../components/Skeletons';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -178,35 +178,6 @@ const Orders = () => {
 
 
 
-  // Skeleton for the orders list table
-  const OrderSkeleton = () => (
-    <div className="divide-y divide-gray-50/80">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="p-6 md:p-8">
-          <div className="flex flex-col xl:flex-row gap-6 items-start xl:items-center justify-between">
-            <div className="flex-1 space-y-4 w-full">
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="skeleton-shimmer h-6 w-32 rounded-lg" />
-                <div className="skeleton-shimmer h-6 w-24 rounded-full" />
-                <div className="skeleton-shimmer h-5 w-36 rounded-lg ml-auto xl:ml-0" />
-              </div>
-              <div className="flex flex-wrap gap-4">
-                <div className="skeleton-shimmer h-8 w-36 rounded-xl" />
-                <div className="skeleton-shimmer h-8 w-44 rounded-xl" />
-                <div className="skeleton-shimmer h-8 w-24 rounded-xl" />
-              </div>
-              <div className="skeleton-shimmer h-9 w-40 rounded-lg" />
-            </div>
-            <div className="flex items-center gap-4 w-full xl:w-auto xl:border-l xl:border-gray-100 xl:pl-8">
-              <div className="skeleton-shimmer h-12 flex-1 xl:w-48 xl:flex-none rounded-2xl" />
-              <div className="skeleton-shimmer h-12 w-12 rounded-2xl" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50/50 p-6 lg:p-10 flex items-center justify-center">
@@ -334,7 +305,7 @@ const Orders = () => {
         {/* Orders List */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           {loading ? (
-            <OrderSkeleton />
+            <AdminOrderSkeleton />
           ) : filteredOrders.length > 0 ? (
             <div className="divide-y divide-gray-50/80">
               {filteredOrders.map((order) => (

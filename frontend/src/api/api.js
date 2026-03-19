@@ -7,7 +7,6 @@ const API = axios.create({
     "Content-Type": "application/json",
   },
 });
-
 // Helper function to manually set/remove token
 export const setAuthToken = (token) => {
   console.log("Setting Auth Token in defaults:", token ? "Token present" : "Token cleared");

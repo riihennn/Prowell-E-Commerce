@@ -10,6 +10,7 @@ import {
   Filter
 } from 'lucide-react';
 import { getAllUsers, toggleUserBlock, updateUserRole, deleteUser } from '../../services/userService';
+import { AdminCustomerSkeleton } from '../../components/Skeletons';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
@@ -209,26 +210,7 @@ const Customers = () => {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                // Skeleton rows
-                [...Array(6)].map((_, i) => (
-                  <tr key={i}>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className="skeleton-shimmer w-12 h-12 rounded-xl flex-shrink-0" />
-                        <div className="skeleton-shimmer h-5 w-32 rounded-lg" />
-                      </div>
-                    </td>
-                    <td className="px-8 py-5"><div className="skeleton-shimmer h-8 w-48 rounded-lg" /></td>
-                    <td className="px-8 py-5"><div className="skeleton-shimmer h-5 w-20 rounded-lg" /></td>
-                    <td className="px-8 py-5"><div className="skeleton-shimmer h-7 w-20 rounded-full" /></td>
-                    <td className="px-8 py-5">
-                      <div className="flex justify-end gap-3">
-                        <div className="skeleton-shimmer h-9 w-20 rounded-xl" />
-                        <div className="skeleton-shimmer h-9 w-9 rounded-xl" />
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                <AdminCustomerSkeleton />
               ) : (
                 filteredCustomers.map((customer) => {
                 const uniqueId = customer._id || customer.id || 'N/A';

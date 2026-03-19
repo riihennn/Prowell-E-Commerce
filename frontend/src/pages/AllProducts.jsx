@@ -6,7 +6,7 @@ import { addToCart } from "../services/cartService";
 import { addToWishlist, removeFromWishlist } from "../services/wishlistService";
 import { getProductCategories, getProductsPaginated } from "../services/productService";
 import { UserContext } from "../Context/UserContext";
-import Loader from "../components/Loader";
+import { AllProductsSkeleton } from "../components/Skeletons";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SORT_OPTIONS = [
@@ -262,7 +262,7 @@ export default function AllProducts() {
       {/* ── Product Grid ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {loading && page === 1 ? (
-          <Loader />
+          <AllProductsSkeleton count={12} />
         ) : products.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-28 text-center">
             <div className="text-5xl mb-4">🔍</div>
@@ -338,8 +338,8 @@ export default function AllProducts() {
             
             {/* Loading More Indicator */}
             {isFetchingMore && (
-              <div className="flex justify-center py-10">
-                <Loader />
+              <div className="mt-5">
+                <AllProductsSkeleton count={4} />
               </div>
             )}
 

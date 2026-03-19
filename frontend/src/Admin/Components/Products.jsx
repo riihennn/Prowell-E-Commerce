@@ -17,6 +17,7 @@ import {
   ImageIcon
 } from 'lucide-react';
 import { getAllAdminProducts, createProduct, updateProduct, deleteProduct, getProductCategories } from '../../services/productService';
+import { AdminProductSkeleton } from '../../components/Skeletons';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -199,33 +200,6 @@ const Products = () => {
     }
   };
 
-  // Skeleton row for the product table
-  const ProductSkeleton = () => (
-    <div className="divide-y divide-gray-50/80">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="p-5 md:p-6">
-          <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-            {/* Image skeleton */}
-            <div className="skeleton-shimmer w-full sm:w-28 h-28 rounded-2xl flex-shrink-0" />
-            {/* Info skeleton */}
-            <div className="flex-1 space-y-3">
-              <div className="skeleton-shimmer h-4 w-24 rounded-lg" />
-              <div className="skeleton-shimmer h-6 w-3/4 rounded-lg" />
-              <div className="skeleton-shimmer h-4 w-1/2 rounded-lg" />
-            </div>
-            {/* Price + actions skeleton */}
-            <div className="hidden sm:flex flex-col items-end gap-4 w-48 flex-shrink-0 border-l border-gray-100 pl-6 self-stretch justify-center">
-              <div className="skeleton-shimmer h-8 w-24 rounded-lg ml-auto" />
-              <div className="flex gap-2 w-full justify-end">
-                <div className="skeleton-shimmer h-9 w-20 rounded-xl" />
-                <div className="skeleton-shimmer h-9 w-9 rounded-xl" />
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 
   if (error && currentView === 'list') {
     return (
@@ -572,7 +546,7 @@ const Products = () => {
 
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           {loading ? (
-            <ProductSkeleton />
+            <AdminProductSkeleton />
           ) : filteredProducts.length > 0 ? (
             <>
               <div className="divide-y divide-gray-50/80">

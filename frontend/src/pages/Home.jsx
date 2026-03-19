@@ -8,7 +8,7 @@ import SecondProducts from "../components/SecondProducts";
 import ThirdProducts from "../components/ThirdProducts";
 import OurBrands from "../components/OurBrands";
 import { getProducts } from "../services/productService";
-import ProductSectionSkeleton from "../components/ProductSectionSkeleton";
+import { ProductSectionSkeleton } from "../components/Skeletons";
 
 export default function Home() {
   const [products, setProducts] = useState([]);

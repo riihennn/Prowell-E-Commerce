@@ -9,10 +9,28 @@ connectDB()
 
 const app = express()
 
+const allowedOrigins = [
+  "https://prowellfitness.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
 app.use(cors({
-    origin: "https://prowellfitness.vercel.app",
-    credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (e.g. curl, Postman, mobile apps)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS policy: origin ${origin} not allowed`));
+  },
+  credentials: true,
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
+// Handle preflight for all routes
+app.options(/\/.*/, cors());
 app.use(express.json({ limit: "50mb" }))
 app.use(express.urlencoded({ limit: "50mb", extended: true }))
 

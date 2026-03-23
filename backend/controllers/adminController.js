@@ -76,9 +76,45 @@ exports.deleteProduct = async (req, res) => {
 // --- ORDERS ---
 exports.getAllOrders = async (req, res) => {
     try {
-        const orders = await Order.find({})
+        const { search, status } = req.query;
+        let query = {};
+
+        if (status && status !== 'All') {
+            query.status = status;
+        }
+
+        if (search && search.trim() !== '') {
+            const searchRegex = new RegExp(search.trim(), 'i');
+            
+            // Look up matching users
+            const matchingUsers = await User.find({
+                $or: [{ name: searchRegex }, { email: searchRegex }]
+            }).select('_id');
+            const userIds = matchingUsers.map(u => u._id);
+            
+            // Validating if search is an ObjectId (helps if they search for exact order ID)
+            const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(search.trim());
+            
+            const orConditions = [
+                { 'shippingAddress.fullName': searchRegex },
+                { 'shippingAddress.city': searchRegex }
+            ];
+            
+            if (userIds.length > 0) {
+                orConditions.push({ user: { $in: userIds } });
+            }
+            if (isValidObjectId) {
+                orConditions.push({ _id: search.trim() });
+            }
+            
+            query.$or = orConditions;
+        }
+
+        const orders = await Order.find(query)
             .populate("user", "name email")
-            .populate("orderItems.product", "name image price");
+            .populate("orderItems.product", "name image price")
+            .sort({ createdAt: -1 });
+            
         res.json(orders);
     } catch (error) {
         res.status(500).json({ message: "Failed to fetch orders" });
@@ -107,60 +143,91 @@ exports.updateOrderStatus = async (req, res) => {
 
 
 // --- USERS ---
-exports.getAllUsers = async (req, res) => {
-    try {
-        const users = await User.find({}).select("-password");
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ message: "Failed to fetch users" });
-    }
-};
+    exports.getAllUsers = async (req, res) => {
+        try {
+            const { search, statusFilter } = req.query;
+            let query = { isAdmin: { $ne: true } };
+            
+            if (search && search.trim() !== '') {
+                const searchRegex = new RegExp(search.trim(), 'i');
+                query.$or = [
+                    { name: searchRegex },
+                    { email: searchRegex }
+                ];
+            }
+            
+            if (statusFilter === 'blocked') {
+                query.$or = query.$or || [];
+                // Handle both potential field names
+                const blockQuery = { $or: [{ isBlocked: true }, { isBlock: true }] };
+                if (query.$or.length > 0) {
+                    query.$and = [blockQuery, { $or: query.$or }];
+                    delete query.$or;
+                } else {
+                    query.$or = blockQuery.$or;
+                }
+            } else if (statusFilter === 'active') {
+                query.$and = [
+                    { isBlocked: { $ne: true } },
+                    { isBlock: { $ne: true } }
+                ];
+            }
 
-exports.updateUserRole = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id).select("-password");
-        if (!user) return res.status(404).json({ message: "User not found" });
+            const users = await User.find(query).select("-password").sort({ createdAt: -1 });
+            res.json(users);
+        } catch (error) {
+            res.status(500).json({ message: "Failed to fetch users" });
+        }
+    };
 
-        user.isAdmin = req.body.isAdmin;
-        const updatedUser = await user.save();
-        res.json(updatedUser);
-    } catch (error) {
-        res.status(400).json({ message: "Failed to update user role" });
-    }
-};
+    exports.updateUserRole = async (req, res) => {
+        try {
+            const user = await User.findById(req.params.id).select("-password");
+            if (!user) return res.status(404).json({ message: "User not found" });
+
+            user.isAdmin = req.body.isAdmin;
+            const updatedUser = await user.save();
+            res.json(updatedUser);
+        } catch (error) {
+            res.status(400).json({ message: "Failed to update user role" });
+        }
+    };
 
 exports.toggleUserBlock = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select("-password");
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        // Assuming we might add an isBlocked field in the future, 
-        // or just toggling admin for now if blocking isn't in schema yet.
-        // Let's add isBlocked logically to support block/unblock.
-        if (user.isBlocked === undefined) {
-            user.set('isBlocked', true, { strict: false });
+        let targetStatus;
+        if (req.body.isBlocked !== undefined) {
+            targetStatus = req.body.isBlocked === 'true' || req.body.isBlocked === true;
         } else {
-            user.set('isBlocked', !user.isBlocked, { strict: false });
+            const user = await User.findById(req.params.id);
+            targetStatus = !user.isBlocked;
         }
 
-        const updatedUser = await user.save();
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id,
+            { isBlocked: targetStatus },
+            { new: true }
+        ).select("-password");
+
+        if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
         res.json(updatedUser);
     } catch (error) {
         res.status(400).json({ message: "Failed to block/unblock user" });
     }
 };
 
-exports.deleteUser = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ message: "User not found" });
+    exports.deleteUser = async (req, res) => {
+        try {
+            const user = await User.findById(req.params.id);
+            if (!user) return res.status(404).json({ message: "User not found" });
 
-        await user.deleteOne();
-        res.json({ message: "User removed" });
-    } catch (error) {
-        res.status(500).json({ message: "Failed to delete user" });
-    }
-};
+            await user.deleteOne();
+            res.json({ message: "User removed" });
+        } catch (error) {
+            res.status(500).json({ message: "Failed to delete user" });
+        }
+    };
 
 // --- DASHBOARD ---
 exports.getDashboardStats = async (req, res) => {

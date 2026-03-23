@@ -48,7 +48,8 @@ exports.registerUser = async (req, res) => {
     const user = await User.create({
       name,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      isBlocked: false
     });
 
     const accessToken = generateAccessToken(user);
@@ -83,6 +84,10 @@ exports.loginUser = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    if (user.isBlocked) {
+      return res.status(403).json({ message: "Your account is blocked. Please contact support." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -127,6 +132,10 @@ exports.refreshToken = async (req, res) => {
 
     if (!user) {
       return res.status(401).json({ message: "Invalid refresh token" });
+    }
+
+    if (user.isBlocked) {
+      return res.status(403).json({ message: "Your account is blocked." });
     }
 
     const accessToken = generateAccessToken(user);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search,
   Filter,
@@ -30,15 +30,31 @@ const Orders = () => {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debounceTimer = useRef(null);
 
-  const fetchOrders = async () => {
+  useEffect(() => {
+    fetchOrders(debouncedSearch, statusFilter);
+  }, [debouncedSearch, statusFilter]);
+
+  // Debounce search — wait 400ms after user stops typing
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 400);
+    return () => clearTimeout(debounceTimer.current);
+  }, [searchTerm]);
+
+  const fetchOrders = async (search = debouncedSearch, status = statusFilter) => {
     setLoading(true);
     try {
-      // Fetch directly from the dedicated order service
-      const data = await getAllOrders();
+      const params = {};
+      if (search && search.trim()) params.search = search.trim();
+      if (status && status !== 'All') params.status = status;
+
+      // Fetch directly from the dedicated order service with params
+      const data = await getAllOrders(params);
 
       const formattedOrders = data.map(order => ({
         ...order,
@@ -90,19 +106,7 @@ const Orders = () => {
     }
   };
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
-      order.orderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.shippingAddress?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.items?.some(item => 
-        item.title?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-    const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filteredOrders = orders;
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {

@@ -15,6 +15,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const mobileSearchRef = useRef(null);
+  const [allProducts, setAllProducts] = useState([]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -70,6 +71,19 @@ export default function Navbar() {
     setActiveIndex(-1);
   };
 
+  // Fetch all products once for instant local filtering
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const data = await getProducts();
+        setAllProducts(data);
+      } catch (err) {
+        console.error("Failed to fetch products for suggestions", err);
+      }
+    };
+    fetchAll();
+  }, []);
+
   useEffect(() => {
     if (!searchTerm.trim()) {
       setSuggestions([]);
@@ -77,178 +91,26 @@ export default function Navbar() {
       return;
     }
 
-    const fetchSuggestions = async () => {
-      try {
-        const data = await getProducts();
-        const filtered = data
-          .filter(
-            (p) =>
-              p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              p.name?.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-          .slice(0, 6);
-        setSuggestions(filtered);
-        setIsDropdownOpen(filtered.length > 0);
-        setActiveIndex(-1);
-      } catch (err) {
-        // Silently fail
-      }
+    const performFilter = () => {
+      const query = searchTerm.toLowerCase();
+      const filtered = allProducts
+        .filter(
+          (p) =>
+            p.title?.toLowerCase().includes(query) ||
+            p.name?.toLowerCase().includes(query) ||
+            p.category?.toLowerCase().includes(query)
+        )
+        .slice(0, 8); // Show up to 8 results
+      setSuggestions(filtered);
+      setIsDropdownOpen(true);
+      setActiveIndex(-1);
     };
 
-    const debounce = setTimeout(fetchSuggestions, 200);
-    return () => clearTimeout(debounce);
-  }, [searchTerm]);
+    // Minor debounce just to avoid CPU spikes during very fast typing
+    const timer = setTimeout(performFilter, 100);
+    return () => clearTimeout(timer);
+  }, [searchTerm, allProducts]);
 
-  const SuggestionDropdown = ({ isMobile = false }) => (
-    <div
-      className="absolute top-full left-0 w-full z-[999]"
-      style={{ marginTop: "6px" }}
-    >
-      {/* Arrow pointer */}
-      <div
-        style={{
-          position: "absolute",
-          top: "-6px",
-          left: isMobile ? "20px" : "40px",
-          width: 0,
-          height: 0,
-          borderLeft: "6px solid transparent",
-          borderRight: "6px solid transparent",
-          borderBottom: "6px solid #fff",
-          filter: "drop-shadow(0 -1px 1px rgba(0,0,0,0.08))",
-        }}
-      />
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: "14px",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.13), 0 1.5px 4px rgba(0,0,0,0.07)",
-          border: "1px solid #f0f0f0",
-          overflow: "hidden",
-          animation: "dropdownFade 0.18s ease",
-        }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            padding: "10px 16px 8px",
-            borderBottom: "1px solid #f5f5f5",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          <TrendingUp size={13} style={{ color: "#ffbe00" }} />
-          <span style={{ fontSize: "11px", fontWeight: 600, color: "#aaa", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            Suggestions
-          </span>
-        </div>
-
-        <ul style={{ margin: 0, padding: "6px 0", listStyle: "none" }}>
-          {suggestions.map((product, index) => (
-            <li
-              key={product._id}
-              onMouseEnter={() => setActiveIndex(index)}
-              onMouseLeave={() => setActiveIndex(-1)}
-              onClick={() => navigateToProduct(product)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "9px 16px",
-                cursor: "pointer",
-                background: activeIndex === index ? "#fffbee" : "transparent",
-                borderLeft: activeIndex === index ? "3px solid #ffbe00" : "3px solid transparent",
-                transition: "all 0.12s ease",
-              }}
-            >
-              {/* Product image */}
-              <div
-                style={{
-                  width: "44px",
-                  height: "44px",
-                  borderRadius: "10px",
-                  overflow: "hidden",
-                  flexShrink: 0,
-                  background: "#f8f8f8",
-                  border: "1px solid #f0f0f0",
-                }}
-              >
-                <img
-                  src={product.image}
-                  alt={product.title || product.name}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              </div>
-
-              {/* Product info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    color: "#1a1a1a",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {/* Highlight matching text */}
-                  {highlightMatch(product.title || product.name, searchTerm)}
-                </p>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
-                  {(product.price || product.currentPrice) && (
-                    <span style={{ fontSize: "13px", fontWeight: 600, color: "#ffbe00" }}>
-                      ₹{product.price || product.currentPrice}
-                    </span>
-                  )}
-                  {product.item && (
-                    <span style={{ fontSize: "11px", color: "#bbb" }}>{product.item}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Arrow hint */}
-              <span style={{ fontSize: "16px", color: "#ddd", flexShrink: 0 }}>›</span>
-            </li>
-          ))}
-        </ul>
-
-        {/* Footer: view all */}
-        <div
-          onClick={() => {
-            handleSearchClick();
-            setIsDropdownOpen(false);
-            if (isMobile) setIsMenuOpen(false);
-          }}
-          style={{
-            padding: "10px 16px",
-            borderTop: "1px solid #f5f5f5",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            transition: "background 0.12s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#fffbee")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-        >
-          <Search size={13} style={{ color: "#ffbe00" }} />
-          <span style={{ fontSize: "13px", color: "#666" }}>
-            Search for <strong style={{ color: "#1a1a1a" }}>"{searchTerm}"</strong>
-          </span>
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes dropdownFade {
-          from { opacity: 0; transform: translateY(-6px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-    </div>
-  );
 
   return (
     <>
@@ -306,7 +168,17 @@ export default function Navbar() {
                   <X className="h-6 w-6 p-0.5" />
                 </button>
               )}
-              {isDropdownOpen && suggestions.length > 0 && <SuggestionDropdown />}
+              {isDropdownOpen && (
+                <SuggestionDropdown
+                  suggestions={suggestions}
+                  searchTerm={searchTerm}
+                  activeIndex={activeIndex}
+                  setActiveIndex={setActiveIndex}
+                  navigateToProduct={navigateToProduct}
+                  handleSearchClick={handleSearchClick}
+                  setIsDropdownOpen={setIsDropdownOpen}
+                />
+              )}
             </div>
 
             {/* Icons */}
@@ -381,7 +253,19 @@ export default function Navbar() {
                 <X className="h-6 w-6 p-0.5" />
               </button>
             )}
-            {isDropdownOpen && suggestions.length > 0 && <SuggestionDropdown isMobile />}
+            {isDropdownOpen && (
+              <SuggestionDropdown
+                isMobile
+                suggestions={suggestions}
+                searchTerm={searchTerm}
+                activeIndex={activeIndex}
+                setActiveIndex={setActiveIndex}
+                navigateToProduct={navigateToProduct}
+                handleSearchClick={handleSearchClick}
+                setIsDropdownOpen={setIsDropdownOpen}
+                setIsMenuOpen={setIsMenuOpen}
+              />
+            )}
           </div>
         </div>
       </nav>
@@ -445,6 +329,204 @@ export default function Navbar() {
     </>
   );
 }
+
+const SuggestionDropdown = ({
+  isMobile = false,
+  suggestions,
+  searchTerm,
+  activeIndex,
+  setActiveIndex,
+  navigateToProduct,
+  handleSearchClick,
+  setIsDropdownOpen,
+  setIsMenuOpen
+}) => (
+  <div
+    className="absolute top-full left-0 w-full z-[999]"
+    style={{ marginTop: "6px" }}    >
+      {/* Arrow pointer */}
+      <div
+        style={{
+          position: "absolute",
+          top: "-6px",
+          left: isMobile ? "20px" : "40px",
+          width: 0,
+          height: 0,
+          borderLeft: "6px solid transparent",
+          borderRight: "6px solid transparent",
+          borderBottom: "6px solid #fff",
+          filter: "drop-shadow(0 -1px 1px rgba(0,0,0,0.08))",
+        }}
+      />
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: "14px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.13), 0 1.5px 4px rgba(0,0,0,0.07)",
+          border: "1px solid #f0f0f0",
+          overflow: "hidden",
+          animation: "dropdownFade 0.18s ease",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: "10px 16px 8px",
+            borderBottom: "1px solid #f5f5f5",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <TrendingUp size={13} style={{ color: "#ffbe00" }} />
+            <span style={{ fontSize: "11px", fontWeight: 600, color: "#aaa", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              {suggestions.length > 0 ? "Suggestions" : "No results found"}
+            </span>
+          </div>
+          {suggestions.length > 0 && (
+            <span style={{ fontSize: "10px", color: "#bbb" }}>Type to refine</span>
+          )}
+        </div>
+
+        {suggestions.length > 0 ? (
+          <ul style={{ margin: 0, padding: "6px 0", listStyle: "none" }}>
+            {suggestions.map((product, index) => (
+              <li
+                key={product._id}
+                onMouseEnter={() => setActiveIndex(index)}
+                onMouseLeave={() => setActiveIndex(-1)}
+                onClick={() => navigateToProduct(product)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "9px 16px",
+                  cursor: "pointer",
+                  background: activeIndex === index ? "#fffbee" : "transparent",
+                  borderLeft: activeIndex === index ? "3px solid #ffbe00" : "3px solid transparent",
+                  transition: "all 0.12s ease",
+                }}
+              >
+                {/* Product image */}
+                <div
+                  style={{
+                    width: "44px",
+                    height: "44px",
+                    borderRadius: "10px",
+                    overflow: "hidden",
+                    flexShrink: 0,
+                    background: "#f8f8f8",
+                    border: "1px solid #f0f0f0",
+                  }}
+                >
+                  <img
+                    src={product.image || product.images?.[0]}
+                    alt={product.title || product.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={(e) => (e.target.src = "https://via.placeholder.com/44")}
+                  />
+                </div>
+
+                {/* Product info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        color: "#1a1a1a",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {/* Highlight matching text */}
+                      {highlightMatch(product.title || product.name, searchTerm)}
+                    </p>
+                    {product.category && (
+                      <span
+                        style={{
+                          fontSize: "9px",
+                          background: "#f4f4f4",
+                          padding: "1px 5px",
+                          borderRadius: "4px",
+                          color: "#888",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.02em",
+                        }}
+                      >
+                        {product.category}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
+                    {(product.price || product.currentPrice) && (
+                      <span style={{ fontSize: "13px", fontWeight: 600, color: "#ffbe00" }}>
+                        ₹{product.price || product.currentPrice}
+                      </span>
+                    )}
+                    {product.brand && (
+                      <span style={{ fontSize: "11px", color: "#bbb" }}>{product.brand}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Arrow hint */}
+                <span style={{ fontSize: "16px", color: "#ddd", flexShrink: 0 }}>›</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div style={{ padding: "30px 16px", textAlign: "center", color: "#999" }}>
+            <Search size={24} style={{ margin: "0 auto 10px", opacity: 0.3 }} />
+            <p style={{ fontSize: "14px", margin: 0 }}>
+              We couldn't find any products matching <br />
+              <strong style={{ color: "#555" }}>"{searchTerm}"</strong>
+            </p>
+          </div>
+        )}
+
+        {/* Footer: view all */}
+        <div
+          onClick={() => {
+            handleSearchClick();
+            setIsDropdownOpen(false);
+            if (isMobile) setIsMenuOpen(false);
+          }}
+          style={{
+            padding: "10px 16px",
+            borderTop: "1px solid #f5f5f5",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            background: "#fafafa",
+            transition: "all 0.12s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#fffbee")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "#fafafa")}
+        >
+          <Search size={13} style={{ color: "#ffbe00" }} />
+          <span style={{ fontSize: "13px", color: "#666" }}>
+            {suggestions.length > 0 ? (
+              <>Search all results for <strong style={{ color: "#1a1a1a" }}>"{searchTerm}"</strong></>
+            ) : (
+              <>Try a different search term</>
+            )}
+          </span>
+        </div>
+      </div>
+
+    <style>{`
+      @keyframes dropdownFade {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    `}</style>
+  </div>
+);
 
 // Utility: highlight matched substring
 function highlightMatch(text, query) {

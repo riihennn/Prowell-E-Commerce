@@ -51,7 +51,7 @@ export function AllProductsSkeleton({ count = 12 }) {
         .map((_, i) => (
           <div
             key={i}
-            className="bg-white rounded-2xl border border-stone-100 overflow-hidden flex flex-col"
+            className="bg-white  border border-stone-100 overflow-hidden flex flex-col"
           >
             <div className="bg-gray-200 skeleton-shimmer" style={{ aspectRatio: "1 / 1" }} />
             <div className="p-4 flex flex-col flex-1 gap-2">

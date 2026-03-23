@@ -14,10 +14,7 @@ export const updateUserRole = async (userId, isAdmin) => {
 
 // Block/Unblock user (Admin only)
 export const toggleUserBlock = async (userId, isBlocked) => {
-    console.log('Sending to backend:', { userId, isBlocked });
     const res = await API.put(`/admin/users/${userId}/block`, { isBlocked });
-    console.log('Backend response:', res.data);
-    console.log('isBlocked in response:', res.data.isBlocked); // ADD THIS LINE
     return res.data;
 };
 

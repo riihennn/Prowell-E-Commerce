@@ -195,24 +195,22 @@ exports.updateOrderStatus = async (req, res) => {
 
 exports.toggleUserBlock = async (req, res) => {
     try {
-        let targetStatus;
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Determine target status — handle boolean and string
         if (req.body.isBlocked !== undefined) {
-            targetStatus = req.body.isBlocked === 'true' || req.body.isBlocked === true;
+            user.isBlocked = req.body.isBlocked === 'true' || req.body.isBlocked === true;
         } else {
-            const user = await User.findById(req.params.id);
-            targetStatus = !user.isBlocked;
+            user.isBlocked = !user.isBlocked; // fallback: toggle
         }
 
-        const updatedUser = await User.findByIdAndUpdate(
-            req.params.id,
-            { isBlocked: targetStatus },
-            { new: true }
-        ).select("-password");
+        await user.save();
+        user.password = undefined;
 
-        if (!updatedUser) return res.status(404).json({ message: "User not found" });
-
-        res.json(updatedUser);
+        res.json(user);
     } catch (error) {
+        console.error('toggleUserBlock error:', error);
         res.status(400).json({ message: "Failed to block/unblock user" });
     }
 };

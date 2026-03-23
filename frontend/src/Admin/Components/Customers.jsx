@@ -67,14 +67,20 @@ const Customers = () => {
   const handleBlockUnblock = async (customerId, currentBlockStatus) => {
     const newStatus = !currentBlockStatus;
     setUpdatingUserIds(prev => new Set(prev).add(customerId));
+
+    // Optimistic update for instant UI feedback
+    setCustomers(prev => prev.map(c =>
+      (c._id || c.id) === customerId ? { ...c, isBlocked: newStatus } : c
+    ));
+
     try {
-      const updatedUser = await toggleUserBlock(customerId, newStatus);
-      if (updatedUser) {
-        setCustomers(prev => prev.map(c => (c._id || c.id) === customerId ? { ...updatedUser } : c));
-      }
+      await toggleUserBlock(customerId, newStatus);
+      // Always refetch to get the real DB state from AWS
+      await fetchCustomers();
     } catch (error) {
       console.error('Error updating customer status:', error);
       alert('Failed to update customer status');
+      // Revert optimistic update on failure
       await fetchCustomers();
     } finally {
       setUpdatingUserIds(prev => { const next = new Set(prev); next.delete(customerId); return next; });

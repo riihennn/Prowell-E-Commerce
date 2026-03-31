@@ -16,6 +16,10 @@ import { placeOrder, createPayment, verifyPayment } from "../services/orderServi
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
+    // Prevent adding multiple Razorpay scripts if already injected
+    if (document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
+      return resolve(true);
+    }
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.onload = () => resolve(true);
@@ -181,6 +185,21 @@ const Payment = () => {
         }
       },
 
+      modal: {
+        ondismiss: function () {
+          // Called when user closes the Razorpay modal without completing payment
+          setIsProcessing(false);
+          
+          // Aggressively remove all Razorpay scripts and their container to stop background network requests
+          document.querySelectorAll('script[src*="razorpay"]').forEach(el => el.remove());
+          document.querySelectorAll('.razorpay-container').forEach(el => el.remove());
+          
+          if (window.Razorpay) {
+            delete window.Razorpay;
+          }
+        }
+      },
+
       theme: {
         color: "#ffbe00"
       }
@@ -190,11 +209,6 @@ const Payment = () => {
     paymentObject.on('payment.failed', function (response) {
       setIsProcessing(false);
       alert(response.error.description);
-    });
-    
-    // reset processing when the modal is closed
-    paymentObject.on('modal.closed', function() {
-      setIsProcessing(false);
     });
 
     paymentObject.open();
